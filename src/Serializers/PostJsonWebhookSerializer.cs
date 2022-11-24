@@ -24,6 +24,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Serializers
             var request = new WebRequestBuilder()
                 .AsPost()
                 .ToUrl(webhook.Target)
+                .WithHeader("Content-Type", "application/json")
                 .WithBody(requestBody)
                 .WithQuerystringArg("action", webhook.Action);
 

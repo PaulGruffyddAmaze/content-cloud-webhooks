@@ -1,6 +1,10 @@
 ﻿using Castle.MicroKernel.SubSystems.Conversion;
 using DeaneBarker.Optimizely.Webhooks.Factories;
 using DeaneBarker.Optimizely.Webhooks.Serializers;
+using EPiServer;
+using EPiServer.Core;
+using EPiServer.DataAbstraction;
+using EPiServer.DataAnnotations;
 using EPiServer.ServiceLocation;
 using EPiServer.Shell;
 using EPiServer.Shell.Configuration;
@@ -50,15 +54,20 @@ namespace DeaneBarker.Optimizely.Webhooks.Blocks
 
         public static void RegisterFactories()
         {
-            var webhookSettings = ServiceLocator.Current.GetInstance<WebhookSettings>();
-
             var contentLoader = ServiceLocator.Current.GetInstance<IContentLoader>();
-            var webhooksFolder = GetWebhooksFolderRoot();
-            var webhookFactories = contentLoader.GetChildren<BlockData>(webhooksFolder);
-            foreach(var f in webhookFactories.Where(i => i is WebhookFactoryBlock).Cast<WebhookFactoryBlock>())
+            var webhookSettings = ServiceLocator.Current.GetInstance<WebhookSettings>();
+            var contentTypeRepo = ServiceLocator.Current.GetInstance<IContentTypeRepository>();
+            var contentModelUsage = ServiceLocator.Current.GetInstance<IContentModelUsage>();
+            var webhookFactories = contentModelUsage.ListContentOfContentType(contentTypeRepo.Load<WebhookFactoryBlock>())
+                .Select(x => contentLoader.Get<WebhookFactoryBlock>(x.ContentLink));
+
+            foreach(var f in webhookFactories)
             {
                 webhookSettings.RegisterWebhookFactory(f, ((IContent)f).ContentGuid.ToString());
             }
+
+            //var webhooksFolder = GetWebhooksFolderRoot();
+            //var webhookFactories = contentLoader.GetChildren<BlockData>(webhooksFolder);
 
         }
 

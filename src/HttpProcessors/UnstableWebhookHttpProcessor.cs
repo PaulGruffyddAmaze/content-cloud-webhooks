@@ -12,6 +12,21 @@ namespace DeaneBarker.Optimizely.Webhooks.HttpProcessors
         private readonly int succeedOnAttemptNumber = 5;
         private readonly Dictionary<string, int> history = new Dictionary<string, int>();
 
+        public async Task<WebhookAttempt> ProcessAsync(HttpRequestMessage request)
+        {
+            var hash = "deane";  // This is fundamentally broken now -- all requests will use the same hash...
+            history[hash] = history.ContainsKey(hash) ? history[hash] + 1 : 1;
+
+            if (history[hash] == succeedOnAttemptNumber)
+            {
+                return new WebhookAttempt(0, 200, $"UnstableWebhookHttpProcessor succeeding on attempt #{history[hash]}");
+            }
+            else
+            {
+                return new WebhookAttempt(0, 500, $"UnstableWebhookHttpProcessor failing on attempt #{history[hash]}");
+            }
+        }
+
         public WebhookAttempt Process(HttpWebRequest request)
         {
             //var hash = CreateMD5(new StreamReader(request.GetRequestStream()).ReadToEndAsync().Result);

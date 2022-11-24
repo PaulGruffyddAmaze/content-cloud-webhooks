@@ -1,11 +1,19 @@
-﻿using DeaneBarker.Optimizely.Webhooks.Factories;
+﻿using DeaneBarker.Optimizely.Serializers;
+using DeaneBarker.Optimizely.Webhooks.Blocks;
+using DeaneBarker.Optimizely.Webhooks.Factories;
 using DeaneBarker.Optimizely.Webhooks.HttpProcessors;
 using DeaneBarker.Optimizely.Webhooks.Queues;
+using DeaneBarker.Optimizely.Webhooks.Serializers;
 using DeaneBarker.Optimizely.Webhooks.Stores;
+using EPiServer;
 using EPiServer.Core;
+using EPiServer.DataAbstraction;
 using EPiServer.Framework;
 using EPiServer.Framework.Initialization;
+using EPiServer.Security;
 using EPiServer.ServiceLocation;
+using Microsoft.Extensions.DependencyInjection;
+using Webhooks.Models;
 
 namespace DeaneBarker.Optimizely.Webhooks
 {
@@ -40,6 +48,27 @@ namespace DeaneBarker.Optimizely.Webhooks
 
         public void Initialize(InitializationEngine context)
         {
+            //var contentRepository = context.Locate.ContentRepository();
+            //var rootContent = contentRepository.GetChildren<WebhookRoot>(ContentReference.RootPage);
+            //if (rootContent == null || !rootContent.Any())
+            //{
+            //    var templatesRoot = contentRepository.GetDefault<WebhookRoot>(ContentReference.RootPage);
+            //    templatesRoot.Name = "Webhook root";
+            //    WebhookFactoryBlock.WebhookFactoryBlockFolderId = contentRepository.Publish(templatesRoot, AccessLevel.NoAccess).ID;
+
+            //    //TODO: Set default permissions?
+            //}
+            //else
+            //{
+            //    WebhookFactoryBlock.WebhookFactoryBlockFolderId = rootContent.First().ContentLink.ID;
+            //}
+            var contentRootService = context.Locate.Advanced.GetInstance<ContentRootService>();
+            contentRootService.Register<ContentFolder>("Webhooks", new Guid("871f2aed-880a-48d2-a325-58c2fd49b4e2"), ContentReference.RootPage);
+            WebhookFactoryBlock.WebhookFactoryBlockFolderId = contentRootService.Get("Webhooks").ID;
+            WebhookFactoryBlock.AvailableSerializers.Add("GET (with ID)", typeof(GetWebhookSerializer));
+            WebhookFactoryBlock.AvailableSerializers.Add("POST (as JSON)", typeof(PostJsonWebhookSerializer));
+            WebhookFactoryBlock.AvailableSerializers.Add("POST (as XML)", typeof(PostXmlWebhookSerializer));
+
             var webhookManager = ServiceLocator.Current.GetInstance<IWebhookManager>();
 
             var contentEvents = ServiceLocator.Current.GetInstance<IContentEvents>();
