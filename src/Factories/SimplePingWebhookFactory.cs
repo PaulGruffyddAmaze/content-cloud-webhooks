@@ -1,4 +1,5 @@
 ﻿using DeaneBarker.Optimizely.Serializers;
+using DeaneBarker.Optimizely.Webhooks.Blocks;
 using DeaneBarker.Optimizely.Webhooks.Serializers;
 using EPiServer.Core;
 using EPiServer.Logging;
@@ -21,6 +22,8 @@ namespace DeaneBarker.Optimizely.Webhooks.Factories
         public IWebhookSerializer Serializer { get; set; } = new GetWebhookSerializer();
 
         public string Name => GetType().Name;
+
+        public Guid FactoryId { get; set; }
 
         public SimplePingWebhookFactory(string target)
         {
@@ -60,7 +63,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Factories
                 return null;
             }
 
-            return new[] { new Webhook(Target, action, Serializer) };
+            return new[] { new Webhook(Target, action, this, Serializer) };
         }
     }
 }

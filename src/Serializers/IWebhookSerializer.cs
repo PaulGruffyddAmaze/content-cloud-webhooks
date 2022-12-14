@@ -4,6 +4,6 @@ namespace DeaneBarker.Optimizely.Webhooks.Serializers
 {
     public interface IWebhookSerializer
     {
-        HttpWebRequest Serialize(Webhook webhook);
+        HttpRequestMessage Serialize(Webhook webhook);
     }
 }

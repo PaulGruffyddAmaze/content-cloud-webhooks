@@ -1,4 +1,6 @@
-﻿using DeaneBarker.Optimizely.Webhooks.Serializers;
+﻿using DeaneBarker.Optimizely.Webhooks.Blocks;
+using DeaneBarker.Optimizely.Webhooks.Factories;
+using DeaneBarker.Optimizely.Webhooks.Serializers;
 using EPiServer.Core;
 using EPiServer.Logging;
 using EPiServer.ServiceLocation;
@@ -21,7 +23,7 @@ namespace DeaneBarker.Optimizely.Webhooks
         public ICollection<string> ExcludeActions { get; set; } = new List<string>();
         public IWebhookSerializer Serializer { get; set; }
 
-        public IEnumerable<Webhook> Process(string action, IContent content = null)
+        public IEnumerable<Webhook> Process(string action, IWebhookFactory webhookProfile, IContent content = null)
         {
             if(content == null)
             {
@@ -66,7 +68,7 @@ namespace DeaneBarker.Optimizely.Webhooks
             var settings = ServiceLocator.Current.GetInstance<WebhookSettings>();
             return new List<Webhook>()
             {
-                new Webhook(Target, action, Serializer ?? settings.DefaultSerializer, content)
+                new Webhook(Target, action, webhookProfile, Serializer ?? settings.DefaultSerializer, content)
             };
         }
     }

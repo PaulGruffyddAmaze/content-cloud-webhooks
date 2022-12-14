@@ -41,7 +41,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Queues
             for (var i = 0; i < count; i++)
             {
                 // This starts a watcher in another thread
-                Task.Run(() =>
+                Task.Run(async () =>
                 {
                     logger.Debug($"Started thread #{i}: {Thread.CurrentThread.ManagedThreadId}");
                     while (!queue.IsCompleted) // After completing a webhook, the code will come back here; since we never call CompleteAdding, this will launch back through the loop
@@ -53,7 +53,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Queues
 
                         // This triggers the actual execution
                         var request = (webhook.Serializer ?? settings.DefaultSerializer).Serialize(webhook);
-                        var result = httpProcessor.Process(request);
+                        var result = await httpProcessor.ProcessAsync(request);
                         logger.Debug($"Webhook attempt created; status: {result.StatusCode}; length: {result.Result.Length} {webhook.ToLogString()}");
                         webhook.AddHistory(result);
                         store.Store(webhook);

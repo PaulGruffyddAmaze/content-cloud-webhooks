@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Specialized;
 using System.Net;
+using System.Net.Http.Json;
 using System.Text;
 using System.Web;
 
@@ -15,6 +16,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Helpers
 		private Uri target { get; set; }
 		private string body { get; set; }
 		private string verb { get; set; }
+		private string contentType { get; set; }
 
 		public WebRequestBuilder WithQuerystringArg(string key, string value)
 		{
@@ -40,9 +42,10 @@ namespace DeaneBarker.Optimizely.Webhooks.Helpers
 			return this;
 		}
 
-		public WebRequestBuilder WithBody(string body)
+		public WebRequestBuilder WithBody(string body, string contentType = "application/json")
 		{
 			this.body = body;
+			this.contentType = contentType;
 			return this;
 		}
 
@@ -59,7 +62,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Helpers
 			return this;
 		}
 
-		public HttpWebRequest Build()
+		public HttpRequestMessage Build()
 		{
 			var builder = new UriBuilder(target);
 			var query = HttpUtility.ParseQueryString(builder.Query);
@@ -69,8 +72,8 @@ namespace DeaneBarker.Optimizely.Webhooks.Helpers
 			}
 			builder.Query = query.ToString();
 
-			var request = (HttpWebRequest)WebRequest.Create(builder.Uri);
-			request.Method = verb;
+			var request = new HttpRequestMessage(new HttpMethod(verb), builder.Uri);//(HttpWebRequest)WebRequest.Create(builder.Uri);
+			//request.Method = verb;
 
 			foreach (var key in headers.AllKeys)
 			{
@@ -84,13 +87,14 @@ namespace DeaneBarker.Optimizely.Webhooks.Helpers
 
 			if (verb == "POST" && body != null)
 			{
-				var encoding = Encoding.Unicode;
-				var bytes = encoding.GetBytes(body);
+				request.Content = new StringContent(body, Encoding.UTF8, contentType);
+				//var encoding = Encoding.Unicode;
+				//var bytes = encoding.GetBytes(body);
 
-				request.ContentLength = bytes.Length;
+				//request.ContentLength = bytes.Length;
 
-				var requestStream = request.GetRequestStream();
-				requestStream.Write(bytes, 0, bytes.Length);
+				//var requestStream = request.GetRequestStream();
+				//requestStream.Write(bytes, 0, bytes.Length);
 			}
 
 			return request;

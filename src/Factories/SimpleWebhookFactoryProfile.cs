@@ -1,4 +1,7 @@
-﻿using DeaneBarker.Optimizely.Webhooks.Serializers;
+﻿using DeaneBarker.Optimizely.Webhooks.Blocks;
+using DeaneBarker.Optimizely.Webhooks.Factories;
+using DeaneBarker.Optimizely.Webhooks.Serializers;
+using EPiServer;
 using EPiServer.Core;
 using EPiServer.Logging;
 using EPiServer.ServiceLocation;
@@ -13,6 +16,7 @@ namespace DeaneBarker.Optimizely.Webhooks
     public class SimpleWebhookFactoryProfile : IWebhookFactoryProfile
     {
         private readonly ILogger logger = LogManager.GetLogger(typeof(SimpleWebhookFactoryProfile));
+        private readonly IContentLoader _contentLoader = ServiceLocator.Current.GetInstance<IContentLoader>();
 
         public Uri Target { get; set; }
         public ICollection<Type> IncludeTypes { get; set; } = new List<Type>();
@@ -20,6 +24,7 @@ namespace DeaneBarker.Optimizely.Webhooks
         public ICollection<string> IncludeActions { get; set; } = new List<string>();
         public ICollection<string> ExcludeActions { get; set; } = new List<string>();
         public IWebhookSerializer Serializer { get; set; }
+        public ContentReference StartingPoint { get; set; } = ContentReference.RootPage;
 
         public SimpleWebhookFactoryProfile(string target)
         {
@@ -31,11 +36,17 @@ namespace DeaneBarker.Optimizely.Webhooks
             Target = target;
         }
 
-        public IEnumerable<Webhook> Process(string action, IContent content = null)
+        public IEnumerable<Webhook> Process(string action, IWebhookFactory webhookProfile, IContent content = null)
         {
             if(content == null)
             {
                 logger.Debug($"Webhook not produced. Content is null.");
+                return null;
+            }
+
+            if (!_contentLoader.GetAncestors(content.ContentLink).Any(x => x.ContentLink.ToReferenceWithoutVersion().Equals(StartingPoint.ToReferenceWithoutVersion())))
+            {
+                logger.Debug($"Webhook not produced. Content is not under starting point.");
                 return null;
             }
 
@@ -76,7 +87,7 @@ namespace DeaneBarker.Optimizely.Webhooks
             var settings = ServiceLocator.Current.GetInstance<WebhookSettings>();
             return new List<Webhook>()
             {
-                new Webhook(Target, action, Serializer ?? settings.DefaultSerializer, content)
+                new Webhook(Target, action, webhookProfile, Serializer ?? settings.DefaultSerializer, content)
             };
         }
     }

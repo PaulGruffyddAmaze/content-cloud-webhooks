@@ -2,6 +2,7 @@
 using DeaneBarker.Optimizely.Webhooks.Factories;
 using DeaneBarker.Optimizely.Webhooks.Serializers;
 using EPiServer;
+using EPiServer.Cms.Shell.UI.ObjectEditing.EditorDescriptors;
 using EPiServer.Core;
 using EPiServer.DataAbstraction;
 using EPiServer.DataAnnotations;
@@ -12,30 +13,46 @@ using EPiServer.Shell.ObjectEditing;
 using EPiServer.Shell.ObjectEditing.EditorDescriptors;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
+using Webhooks.Models;
 
 namespace DeaneBarker.Optimizely.Webhooks.Blocks
 {
     [ContentType(GUID = "AEECADF2-3E89-4117-ADEB-F8D43565D3F4", DisplayName = "Webhook Factory", GroupName = "Advanced")]
     public class WebhookFactoryBlock : BlockData, IWebhookFactory
     {
+        [Ignore]
         public static int WebhookFactoryBlockFolderId { get; set; } = 0;
+        [Ignore]
         public static Dictionary<string, Type> AvailableSerializers { get; set; } = new();
 
+        [Display(Order = 10)]
         [Required]
         [UIHint("UrlBox")]
         public virtual string Target { get; set; }
 
+        [Display(Name = "Custom Headers", Order = 20)]
+        [EditorDescriptor(EditorDescriptorType = typeof(CollectionEditorDescriptor<HttpHeaderItem>))]
+        public virtual IList<HttpHeaderItem> CustomHeaders { get; set; }
+
+        [Display(Name = "Starting Point", Description = "The webhook will only fire for descendents of this starting point", Order = 30)]
+        public virtual ContentReference StartingPoint { get; set; }
+
+        [Display(Order = 40)]
         [SelectMany(SelectionFactoryType = typeof(ActionSelectionFactory))]
         public virtual IList<string> Actions { get; set; }
 
+        [Display(Order = 50)]
         [SelectMany(SelectionFactoryType = typeof(TypeSelectionFactory))]
         public virtual IList<string> Types { get; set; }
 
-        [Display(Name = "Webhook Type")]
+        [Display(Name = "Webhook Type", Order = 60)]
         [SelectOne(SelectionFactoryType = typeof(SerializerSelectionFactory))]
         public virtual string WebhookType { get; set; }
 
         public string Name => $"{((IContent)this).Name} / {((IContent)this).ContentLink}";
+
+        [Ignore]
+        public Guid FactoryId { get => (this as IContent)?.ContentGuid ?? Guid.Empty; set => throw new NotImplementedException(); }
 
         public IEnumerable<Webhook> Generate(string action, IContent content)
         {
@@ -45,21 +62,20 @@ namespace DeaneBarker.Optimizely.Webhooks.Blocks
             var factory = new SimpleWebhookFactoryProfile(target)
             {
                 IncludeActions = Actions,
-                IncludeTypes = Types.Select(t => Type.GetType(t)).ToList(),
+                IncludeTypes = Types?.Select(t => Type.GetType(t)).ToList(),
+                StartingPoint = StartingPoint ?? ContentReference.RootPage,
                 Serializer = (IWebhookSerializer)Activator.CreateInstance(serializerType)
             };
 
-            return factory.Process(action, content);
+            return factory.Process(action, this, content);
         }
 
         public static void RegisterFactories()
         {
             var contentLoader = ServiceLocator.Current.GetInstance<IContentLoader>();
             var webhookSettings = ServiceLocator.Current.GetInstance<WebhookSettings>();
-            var contentTypeRepo = ServiceLocator.Current.GetInstance<IContentTypeRepository>();
-            var contentModelUsage = ServiceLocator.Current.GetInstance<IContentModelUsage>();
-            var webhookFactories = contentModelUsage.ListContentOfContentType(contentTypeRepo.Load<WebhookFactoryBlock>())
-                .Select(x => contentLoader.Get<WebhookFactoryBlock>(x.ContentLink));
+            var contentRootService = ServiceLocator.Current.GetInstance<ContentRootService>();
+            var webhookFactories = contentLoader.GetDescendents(contentRootService.Get("Webhooks")).Select(x => contentLoader.Get<IContent>(x) as WebhookFactoryBlock).Where(x => x != null);
 
             foreach(var f in webhookFactories)
             {

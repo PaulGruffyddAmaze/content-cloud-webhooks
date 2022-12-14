@@ -1,4 +1,5 @@
-﻿using DeaneBarker.Optimizely.Webhooks.Serializers;
+﻿using DeaneBarker.Optimizely.Webhooks.Blocks;
+using DeaneBarker.Optimizely.Webhooks.Serializers;
 using EPiServer.Core;
 using EPiServer.Logging;
 using System;
@@ -18,8 +19,10 @@ namespace DeaneBarker.Optimizely.Webhooks.Factories
         public ICollection<string> IncludeActions { get; set; } = new List<string>();
         public ICollection<string> ExcludeActions { get; set; } = new List<string>();
         public IWebhookSerializer Serializer { get; set; } = new PostXmlWebhookSerializer();
+        public WebhookFactory WebhookConfig { get; set; }
 
         public string Name => GetType().Name;
+        public Guid FactoryId { get; set; }
 
         public PostContentWebhookFactory(string target)
         {
@@ -65,7 +68,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Factories
                 return null;
             }
 
-            return new[] { new Webhook(Target, action, Serializer, content) };
+            return new[] { new Webhook(Target, action, this, Serializer, content) };
         }
     }
 }

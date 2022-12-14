@@ -27,22 +27,22 @@ namespace DeaneBarker.Optimizely.Webhooks.HttpProcessors
             }
         }
 
-        public WebhookAttempt Process(HttpWebRequest request)
-        {
-            //var hash = CreateMD5(new StreamReader(request.GetRequestStream()).ReadToEndAsync().Result);
+        //public WebhookAttempt Process(HttpWebRequest request)
+        //{
+        //    //var hash = CreateMD5(new StreamReader(request.GetRequestStream()).ReadToEndAsync().Result);
 
-            var hash = "deane";  // This is fundamentally broken now -- all requests will use the same hash...
-            history[hash] = history.ContainsKey(hash) ? history[hash] + 1 : 1;
+        //    var hash = "deane";  // This is fundamentally broken now -- all requests will use the same hash...
+        //    history[hash] = history.ContainsKey(hash) ? history[hash] + 1 : 1;
 
-            if (history[hash] == succeedOnAttemptNumber)
-            {
-                return new WebhookAttempt(0, 200, $"UnstableWebhookHttpProcessor succeeding on attempt #{history[hash]}");
-            }
-            else
-            {
-                return new WebhookAttempt(0, 500, $"UnstableWebhookHttpProcessor failing on attempt #{history[hash]}");
-            }
-        }
+        //    if (history[hash] == succeedOnAttemptNumber)
+        //    {
+        //        return new WebhookAttempt(0, 200, $"UnstableWebhookHttpProcessor succeeding on attempt #{history[hash]}");
+        //    }
+        //    else
+        //    {
+        //        return new WebhookAttempt(0, 500, $"UnstableWebhookHttpProcessor failing on attempt #{history[hash]}");
+        //    }
+        //}
 
         public static string CreateMD5(string input)
         {

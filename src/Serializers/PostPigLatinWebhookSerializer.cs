@@ -1,4 +1,5 @@
-﻿using DeaneBarker.Optimizely.Webhooks.Helpers;
+﻿using DeaneBarker.Optimizely.Webhooks.Blocks;
+using DeaneBarker.Optimizely.Webhooks.Helpers;
 using EPiServer.Logging;
 using System.Net;
 using ILogger = EPiServer.Logging.ILogger;
@@ -9,7 +10,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Serializers
     {
         private readonly ILogger logger = LogManager.GetLogger(typeof(PostXmlWebhookSerializer));
 
-        public HttpWebRequest Serialize(Webhook webhook)
+        public HttpRequestMessage Serialize(Webhook webhook)
         {
             var content = webhook.Content.Name;
             var requestBody = ToPigLatin(content);
@@ -19,8 +20,16 @@ namespace DeaneBarker.Optimizely.Webhooks.Serializers
             var request = new WebRequestBuilder()
                 .AsPost()
                 .ToUrl(webhook.Target)
-                .WithBody(requestBody)
+                .WithBody(requestBody, "text/plain")
                 .WithQuerystringArg("action", webhook.Action);
+            if (webhook.WebhookProfile is WebhookFactoryBlock webhookFactoryBlock && (webhookFactoryBlock.CustomHeaders?.Any() ?? false))
+            {
+                // add headers
+                foreach (var header in webhookFactoryBlock.CustomHeaders)
+                {
+                    request = request.WithHeader(header.HeaderName, header.HeaderValue);
+                }
+            }
 
             return request.Build();
         }

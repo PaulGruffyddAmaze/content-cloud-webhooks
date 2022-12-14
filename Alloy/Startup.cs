@@ -1,10 +1,12 @@
 using alloy.Extensions;
+using DeaneBarker.Optimizely.Webhooks.Stores;
 using EPiServer.Cms.Shell;
 using EPiServer.Cms.UI.AspNetIdentity;
 using EPiServer.ContentApi.Cms;
 using EPiServer.Scheduler;
 using EPiServer.ServiceLocation;
 using EPiServer.Web.Routing;
+using Webhooks.Extensions;
 
 namespace alloy;
 
@@ -31,7 +33,8 @@ public class Startup
             .AddCms()
             .AddAlloy()
             .AddAdminUserRegistration()
-            .AddEmbeddedLocalization<Startup>();
+            .AddEmbeddedLocalization<Startup>()
+            .AddWebhooks();
         services.AddContentDeliveryApi(options =>
         {
             // Access the options here
@@ -67,6 +70,8 @@ public class Startup
         app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseWebhooks();
+        FileSystemWebhookStore.StorePath = "C:\\Temp\\webhooks";
 
         app.UseEndpoints(endpoints =>
         {

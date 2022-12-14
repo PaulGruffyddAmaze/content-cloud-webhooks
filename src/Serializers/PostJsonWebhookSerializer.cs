@@ -1,4 +1,5 @@
-﻿using DeaneBarker.Optimizely.Webhooks.Helpers;
+﻿using DeaneBarker.Optimizely.Webhooks.Blocks;
+using DeaneBarker.Optimizely.Webhooks.Helpers;
 using EPiServer.ContentApi.Core.Configuration;
 using EPiServer.ContentApi.Core.Serialization;
 using EPiServer.ContentApi.Core.Serialization.Internal;
@@ -16,7 +17,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Serializers
     {
         private readonly ILogger logger = LogManager.GetLogger(typeof(PostXmlWebhookSerializer));
 
-        public HttpWebRequest Serialize(Webhook webhook)
+        public HttpRequestMessage Serialize(Webhook webhook)
         {           
             var requestBody = SerializeIContentAsJson(webhook.Content);
             logger.Debug($"Serialized content {webhook.Content.ContentLink} into {requestBody.Length} byte(s). ID: {webhook.Id}");
@@ -24,9 +25,16 @@ namespace DeaneBarker.Optimizely.Webhooks.Serializers
             var request = new WebRequestBuilder()
                 .AsPost()
                 .ToUrl(webhook.Target)
-                .WithHeader("Content-Type", "application/json")
                 .WithBody(requestBody)
                 .WithQuerystringArg("action", webhook.Action);
+            if (webhook.WebhookProfile is WebhookFactoryBlock webhookFactoryBlock && (webhookFactoryBlock.CustomHeaders?.Any() ?? false))
+            {
+                // add headers
+                foreach (var header in webhookFactoryBlock.CustomHeaders)
+                {
+                    request = request.WithHeader(header.HeaderName, header.HeaderValue);
+                }
+            }
 
             return request.Build();
         }
@@ -37,13 +45,13 @@ namespace DeaneBarker.Optimizely.Webhooks.Serializers
             var contentConvertingService = ServiceLocator.Current.GetInstance<ContentConvertingService>();
 
             var converterContext = new ConverterContext(
-                   contentReference: ((IContent)content).ContentLink,
-                   language: System.Globalization.CultureInfo.CurrentCulture,
+                   contentReference: content.ContentLink,
+                   language: (content as ILocalizable)?.Language ?? System.Globalization.CultureInfo.CurrentCulture,
                    contentApiOptions: new ContentApiOptions("", false, false, ""),
                    contextMode: ContextMode.Default,
-            select: "",
-            expand: "",
-            excludePersonalizedContent: false
+                   select: "",
+                   expand: "",
+                   excludePersonalizedContent: false
                    );
             var obj = contentConvertingService.ConvertToContentApiModel((IContent)content, converterContext);
 

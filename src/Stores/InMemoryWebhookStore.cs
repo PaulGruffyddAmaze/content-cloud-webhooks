@@ -18,5 +18,10 @@ namespace DeaneBarker.Optimizely.Webhooks.Stores
             logger.Debug($"Storing webhook {webhook.ToLogString()}");
             webhooks.Add(webhook);
         }
+
+        public IEnumerable<StorableWebhook> GetResultsByFactoryId(Guid id)
+        {
+            return webhooks.Where(x => x.WebhookProfile.FactoryId.Equals(id)).Select(x => new StorableWebhook(x)).OrderByDescending(x => x.created);
+        }
     }
 }

@@ -7,7 +7,7 @@ namespace DeaneBarker.Optimizely.Webhooks
     // This is a historical record
     public struct WebhookAttempt
     {
-        public DateTime Executed { get; }
+        public DateTime Executed { get; set; } //TODO: Review the "set"
         public long Elapsed { get; }
         public int StatusCode { get; }
         public string Result { get; }
