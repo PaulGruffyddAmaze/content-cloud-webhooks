@@ -44,7 +44,7 @@ namespace DeaneBarker.Optimizely.Webhooks
                 return null;
             }
 
-            if (!_contentLoader.GetAncestors(content.ContentLink).Any(x => x.ContentLink.ToReferenceWithoutVersion().Equals(StartingPoint.ToReferenceWithoutVersion())))
+            if (!content.ContentLink.ToReferenceWithoutVersion().Equals(StartingPoint.ToReferenceWithoutVersion()) && !_contentLoader.GetAncestors(content.ContentLink).Any(x => x.ContentLink.ToReferenceWithoutVersion().Equals(StartingPoint.ToReferenceWithoutVersion())))
             {
                 logger.Debug($"Webhook not produced. Content is not under starting point.");
                 return null;

@@ -34,7 +34,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Blocks
         [EditorDescriptor(EditorDescriptorType = typeof(CollectionEditorDescriptor<HttpHeaderItem>))]
         public virtual IList<HttpHeaderItem> CustomHeaders { get; set; }
 
-        [Display(Name = "Starting Point", Description = "The webhook will only fire for descendents of this starting point", Order = 30)]
+        [Display(Name = "Starting Point", Description = "The webhook will only fire for the defined content item and its descendents", Order = 30)]
         public virtual ContentReference StartingPoint { get; set; }
 
         [Display(Order = 40)]

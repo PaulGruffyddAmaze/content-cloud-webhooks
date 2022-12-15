@@ -2,6 +2,7 @@
 using DeaneBarker.Optimizely.Webhooks.Stores;
 using EPiServer.Core;
 using EPiServer.Core.Internal;
+using EPiServer.Security;
 using EPiServer.Web;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -30,6 +31,13 @@ namespace Webhooks.UI
         {
             var content = new ContentReference(id);
             var webhookContent = _contentLoader.Get<WebhookFactoryBlock>(content);
+            
+            //Don't let a user access this page if they don't have access to edit the webhook
+            if (!(webhookContent as IContentSecurable).GetContentSecurityDescriptor().HasAccess(User, AccessLevel.Edit))
+            {
+                return Unauthorized();
+            }
+
             var results = _store.GetResultsByFactoryId(webhookContent.FactoryId);
             foreach (var result in results)
             {
